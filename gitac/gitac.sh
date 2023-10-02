@@ -1,20 +1,17 @@
 #!/usr/bin/bash
+source $LOCAL/bin/messages-template.sh
+
+PROGRAM_NAME="gitac"
+USAGE="$PROGRAM_NAME <MESSAGE> [<FILE1>[ <FILE2>[ ...]]]\nWhat will work exactly as 'git add <FILE1>[ <FILE2>[ ...]] && git commit -m <MESSAGE>'"
+EXAMPLES="If only <MESSAGE> is given $PROGRAM_NAME will run 'git add . && git commit -m <MESSAGE>'"
+INSTRUCTIONS=$(GET_USAGE_INSTRUCTIONS "$USAGE" "$EXAMPLES")
+
 function GET_CURRENT_BRANCH () {
     git branch | grep '*' | cut -d' ' -f2
 }
-function GET_USAGE_INSTRUCTIONS () {
-    PROGRAM_NAME=$(echo $0 | rev | cut -d'/' -f1 | rev)
-    echo $PROGRAM_NAME': This is a shortcut for git add and git commit commands.'
-    echo ''
-    echo 'Usage: '$PROGRAM_NAME' <MESSAGE> [<FILE1>[ <FILE2>[ ...]]]'
-    echo 'What will work exactly as `git add <FILE1>[ <FILE2>[ ...]] && git commit -m <MESSAGE>`'
-    echo ''
-    echo 'If only <MESSAGE> is given '$PROGRAM_NAME' will run `git add . && git commit -m <MESSAGE>`'
-}
 
 if [ -z "$1" ]; then
-    GET_USAGE_INSTRUCTIONS
-    exit
+    ERROR_MESSAGE 'No arguments given.'
 else
     MESSAGE="$1"
 fi

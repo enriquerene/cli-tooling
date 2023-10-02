@@ -1,5 +1,5 @@
 #!/usr/bin/bash
-source ./messages-template.sh
+source $LOCAL/bin/messages-template.sh
 
 USAGE="files-with <regex_pattern> [<directory>[ <grep_around_lines>[ ...]]]\n\ndefault directory for searching is current one."
 EXAMPLES=""
