@@ -1,5 +1,4 @@
 #!/usr/bin/bash
-
 function GET_USAGE_INSTRUCTIONS () {
     echo "USAGE INSTRUCTIONS"
     echo -e "$1"
@@ -14,6 +13,9 @@ function ERROR_MESSAGE () {
     echo "ERROR: $1"
     echo ''
     echo -e "$2"
+    if [ -n "$3" ]; then
+        exit $3
+    fi
     exit 1
 }
 

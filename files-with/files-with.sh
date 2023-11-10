@@ -13,27 +13,53 @@ if [ -z "$1" ]; then
 else
     PATTERN="$1"
 fi
+shift
 
-if [ -z "$2" ]; then
-    DIRECTORY_LIST='.'
-else
-    DIRECTORY_LIST="$2"
+if [ -n "$(echo $@ | sed 's/--type=.* //' | sed 's/--lines=.* //' | grep '\-\-')" ]; then
+    ERROR_MESSAGE 'invalid option provided' "$INSTRUCTIONS"
 fi
 
-if [ -z "$3" ]; then
-    NO_LINES=0
+
+DIRECTORY_LIST='.'
+NO_LINES=0
+if [ -z "$(echo $@ | grep '\-\-')" ]; then
+    if [ -n "$1" ]; then
+        DIRECTORY_LIST="$@"
+    fi
 else
-    NO_LINES="$3"
+    COUNTER=0
+    if [ -n "$(echo $@ | grep '\-\-type')" ]; then
+        TYPE=$(echo $@ | sed 's/^.*--type=//' | awk -F' ' '{print $1}')
+        COUNTER=$(( $COUNTER + 1 ))
+    fi
+    if [ -n "$(echo $@ | grep '\-\-lines')" ]; then
+        NO_LINES=$(echo $@ | sed 's/^.*--lines=//' | awk -F' ' '{print $1}')
+        COUNTER=$(( $COUNTER + 1 ))
+    fi
+    for i in $(seq $COUNTER); do
+        shift
+    done
+    if [ "$#" -gt 0 ]; then
+        DIRECTORY_LIST="$@"
+    fi
 fi
 
 for DIR in $DIRECTORY_LIST; do
-    for FILE in $(find $DIR -type f -exec grep $PATTERN -l {} \;); do
+    if [ -n "$TYPE" ]; then
+        LIST=$(find $DIR -type f -name "*.$TYPE" -exec grep "$PATTERN" -l {} \;)
+    else
+        LIST=$(find $DIR -type f -exec grep "$PATTERN" -l {} \;)
+    fi
+    for FILE in $LIST; do
         if [ "$NO_LINES" = "0" ]; then
             echo $FILE
         else
-            echo Ocurrence of $PATTERN in $FILE
-            echo '---'
-            grep -$NO_LINES $PATTERN $FILE
+            echo -e "----------------------------------------------------\n"
+            echo "Ocurrence Found for pattern '$PATTERN'"
+            echo "File: $FILE"
+            echo -e "----------------------------------------------------\n"
+            grep -$NO_LINES --color=auto "$PATTERN" $FILE
+            echo -e "\n"
         fi
     done
 done

@@ -19,33 +19,35 @@ function CLEAR_LINK_IF_EXIST () {
     fi
 }
 
-case "$1" in
-    sh)
-        for F in $(ls | grep '\.sh$'); do
-            NAME=$(echo $F | cut -d'.' -f1)
-            CLEAR_LINK_IF_EXIST $NAME
-            cp $F $INSTALLATION_LOCAL/$F
-            chmod +x $INSTALLATION_LOCAL/$F
-            ln -s $INSTALLATION_LOCAL/$F $INSTALLATION_LOCAL/$NAME
-        done
-    ;;
-    fish)
-        for F in $(ls | grep '\.fish$'); do
-            NAME=$(echo $F | cut -d'.' -f1)
-            CLEAR_LINK_IF_EXIST $NAME
-            cp $F $INSTALLATION_LOCAL/$F
-            chmod +x $INSTALLATION_LOCAL/$F
-            ln -s $INSTALLATION_LOCAL/$F $INSTALLATION_LOCAL/$NAME
-        done
-    ;;
-    *)
-        if [ ! -f "$1" ]; then
-            ERROR_MESSAGE 'No such file.' "$INSTRUCTIONS"
-        fi
-        NAME=$(echo "$1" | cut -d'.' -f1)
+function INSTALL_SCRIPT_LOCALLY () {
+    FILE="$1.$2"
+    cp "$1/$FILE" "$INSTALLATION_LOCAL/$FILE"
+    chmod +x $INSTALLATION_LOCAL/$FILE
+    ln -s $INSTALLATION_LOCAL/$FILE $INSTALLATION_LOCAL/$1
+    echo "Symlink created for $NAME"
+}
+
+if [ -n "$(echo $1 | grep -E '^(sh|fish)$')" ]; then
+    FORMAT=$1
+    for F in $(ls -d */); do
+        NAME=$(echo $F | cut -d'/' -f1)
         CLEAR_LINK_IF_EXIST $NAME
-        cp $1 $INSTALLATION_LOCAL/$1
-        chmod +x $INSTALLATION_LOCAL/$1
-        ln -s $INSTALLATION_LOCAL/$1 $INSTALLATION_LOCAL/$NAME
-    ;;
-esac
+        INSTALL_SCRIPT_LOCALLY $NAME $FORMAT
+    done
+else
+    if [ ! -f "$1" ]; then
+        ERROR_MESSAGE 'No such file.' "$INSTRUCTIONS"
+    fi
+    if [ -n "$(echo $1 | grep '/')" ]; then
+        NAME=$(echo "$1" | cut -d'/' -f1)
+        FILE_NAME=$(echo "$1" | cut -d'/' -f2)
+    else
+        NAME=$(echo "$1" | cut -d'.' -f1)
+        FILE_NAME=$1
+    fi
+    CLEAR_LINK_IF_EXIST $NAME
+    cp $1 $INSTALLATION_LOCAL/$FILE_NAME
+    chmod +x $INSTALLATION_LOCAL/$FILE_NAME
+    ln -s $INSTALLATION_LOCAL/$FILE_NAME $INSTALLATION_LOCAL/$NAME
+    echo "Symlink created for $NAME"
+fi
