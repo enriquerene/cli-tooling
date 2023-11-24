@@ -11,7 +11,7 @@ function GET_CURRENT_BRANCH () {
 }
 
 if [ -z "$1" ]; then
-    ERROR_MESSAGE 'No arguments given.'
+    ERROR_MESSAGE 'No arguments given.' "$INSTRUCTIONS"
 else
     MESSAGE="$1"
 fi

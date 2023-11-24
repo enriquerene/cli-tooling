@@ -55,8 +55,7 @@ for DIR in $DIRECTORY_LIST; do
             echo $FILE
         else
             echo -e "----------------------------------------------------\n"
-            echo "Ocurrence Found for pattern '$PATTERN'"
-            echo "File: $FILE"
+            echo "Pattern found: '$PATTERN' in File: $FILE"
             echo -e "----------------------------------------------------\n"
             grep -$NO_LINES --color=auto "$PATTERN" $FILE
             echo -e "\n"
