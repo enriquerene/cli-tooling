@@ -5,60 +5,91 @@ USAGE="files-with <regex_pattern> [<directory>[ <grep_around_lines>[ ...]]]\n\nd
 EXAMPLES=""
 INSTRUCTIONS=$(GET_USAGE_INSTRUCTIONS "$USAGE" "$EXAMPLES")
 
-DIRECTORY_LIST=''
 PATTERN=''
-
 if [ -z "$1" ]; then
     ERROR_MESSAGE 'No argument provided' "$INSTRUCTIONS"
 else
     PATTERN="$1"
 fi
+
 shift
 
-if [ -n "$(echo $@ | sed 's/--type=.* //' | sed 's/--lines=.* //' | grep '\-\-')" ]; then
-    ERROR_MESSAGE 'invalid option provided' "$INSTRUCTIONS"
-fi
+for arg in "$@"; do
+    if [[ "$arg" == --* && "$arg" != "--type="* && "$arg" != "--lines="* ]]; then
+        ERROR_MESSAGE 'invalid option provided' "$INSTRUCTIONS"
+    fi
+done
 
-
-DIRECTORY_LIST='.'
+COUNTER=0
+TYPE=''
 NO_LINES=0
-if [ -z "$(echo $@ | grep '\-\-')" ]; then
-    if [ -n "$1" ]; then
-        DIRECTORY_LIST="$@"
-    fi
-else
-    COUNTER=0
-    if [ -n "$(echo $@ | grep '\-\-type')" ]; then
-        TYPE=$(echo $@ | sed 's/^.*--type=//' | awk -F' ' '{print $1}')
-        COUNTER=$(( $COUNTER + 1 ))
-    fi
-    if [ -n "$(echo $@ | grep '\-\-lines')" ]; then
-        NO_LINES=$(echo $@ | sed 's/^.*--lines=//' | awk -F' ' '{print $1}')
-        COUNTER=$(( $COUNTER + 1 ))
-    fi
-    for i in $(seq $COUNTER); do
-        shift
-    done
-    if [ "$#" -gt 0 ]; then
-        DIRECTORY_LIST="$@"
-    fi
+
+for arg in "$@"; do
+    case $arg in
+        --type=*)
+            TYPE="${arg#*=}"
+            COUNTER=$(( COUNTER + 1 ))
+            ;;
+        --lines=*)
+            NO_LINES="${arg#*=}"
+            COUNTER=$(( COUNTER + 1 ))
+            ;;
+    esac
+done
+
+[[ ! "$NO_LINES" =~ ^[0-9]+$ ]] && NO_LINES=0
+
+for i in $(seq 1 $COUNTER); do
+    shift
+done
+
+#DIRECTORY_LIST=()
+#NO_LINES=0
+#TYPE=''
+#
+#while [[ $# -gt 0 ]]; do
+#    case "$1" in
+#        --lines=*)
+#            NO_LINES="${1#*=}"
+#            shift
+#            ;;
+#        --type=*)
+#            TYPE="${1#*=}"
+#            shift
+#            ;;
+#        *)
+#            if [ -z "$PATTERN" ]; then
+#                PATTERN="$1"
+#            else
+#                DIRECTORY_LIST+=("$1")
+#            fi
+#            shift
+#            ;;
+#    esac
+#done
+#
+#DIRECTORY_LIST="$@"
+if [ -z "$DIRECTORY_LIST" ]; then
+    DIRECTORY_LIST='.'
 fi
 
 for DIR in $DIRECTORY_LIST; do
     if [ -n "$TYPE" ]; then
-        LIST=$(find $DIR -type f -name "*.$TYPE" -exec grep "$PATTERN" -l {} \;)
+        LIST=$(find $DIR -type f -name "*.$TYPE" -exec grep -l "$PATTERN" {} \;)
     else
-        LIST=$(find $DIR -type f -exec grep "$PATTERN" -l {} \;)
+        LIST=$(find $DIR -type f -exec grep -l "$PATTERN" {} \;)
     fi
     for FILE in $LIST; do
-        if [ "$NO_LINES" = "0" ]; then
+        if ! [[ "$NO_LINES" =~ ^[0-9]+$ ]]; then
+            NO_LINES=0
+        fi
+        if [ "$NO_LINES" -eq 0 ]; then
             echo $FILE
         else
-            echo -e "----------------------------------------------------\n"
+            echo "----------------------------------------------------"
             echo "Pattern found: '$PATTERN' in File: $FILE"
-            echo -e "----------------------------------------------------\n"
-            grep -$NO_LINES --color=auto "$PATTERN" $FILE
-            echo -e "\n"
+            echo "----------------------------------------------------"
+            grep -C $NO_LINES --color=auto "$PATTERN" "$FILE"
         fi
     done
 done
